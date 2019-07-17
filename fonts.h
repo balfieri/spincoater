@@ -25,12 +25,14 @@
 #define FONTS_H
 #include "stdint.h"
 
+//! @brief Character Info
 typedef struct _font_char_desc
 {
     uint8_t width;      //!< Character width in pixel
     uint16_t offset;    //!< Offset of this character in bitmap
 } font_char_desc_t;
 
+//! @brief Font Info
 typedef struct _font_info
 {
     uint8_t height;         //!< Character height in pixel, all characters have same height
@@ -41,6 +43,8 @@ typedef struct _font_info
     const uint8_t *bitmap;  //!< Character bitmap
 } font_info_t;
 
+// available fonts
+//
 #include "font_glcd_5x7.h"
 #include "font_tahoma_8pt.h"
 
@@ -50,6 +54,6 @@ const font_info_t * fonts[] =
     &tahoma_8pt_font_info
 };
 
-#define NUM_FONTS (sizeof(fonts)/sizeof(fonts[0])
+#define NUM_FONTS (sizeof(fonts)/sizeof(fonts[0]))
 
 #endif /* FONTS */

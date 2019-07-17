@@ -9,8 +9,7 @@
 
 #include <iostream>
 
-#include "fonts.h"
-#include "i2c.h"
+#include "oled.h"
 
 int main()
 {
