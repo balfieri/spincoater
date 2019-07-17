@@ -212,7 +212,7 @@ public:
 
 OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type, uint8_t address) {
         this->rst_pin = rst;
-	i2c = new I2C(scl, sda);
+	i2c = new I2C(scl, sda, 10);
 	this->type = type;
 	this->address = address;
 
@@ -253,6 +253,7 @@ void OLED::data(uint8_t adress, uint8_t d) {
 }
 
 bool OLED::init() {
+        // reset the OLED
         gpio_set_direction(rst_pin, GPIO_MODE_INPUT_OUTPUT);
         gpio_set_level(rst_pin, 0);
         ets_delay_us(50);

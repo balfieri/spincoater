@@ -9,10 +9,10 @@
 class I2C {
 private:
 	gpio_num_t scl_pin, sda_pin;
+        uint32_t delay_us;
 
 public:
-	I2C(gpio_num_t scl, gpio_num_t sda);
-	void init(uint8_t scl_pin, uint8_t sda_pin);
+	I2C(gpio_num_t scl, gpio_num_t sda, uint32_t delay);
 	bool start(void);
 	void stop(void);
 	bool write(uint8_t data);
@@ -33,7 +33,7 @@ public:
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define _DELAY ets_delay_us(1)
+#define _DELAY ets_delay_us(delay_us)
 #define _SDA1 gpio_set_level(sda_pin,1)
 #define _SDA0 gpio_set_level(sda_pin,0)
 
@@ -43,10 +43,11 @@ public:
 #define _SDAX gpio_get_level(sda_pin)
 #define _SCLX gpio_get_level(scl_pin)
 
-I2C::I2C(gpio_num_t scl, gpio_num_t sda)
+I2C::I2C(gpio_num_t scl, gpio_num_t sda, uint32_t delay)
 {
     scl_pin = scl;
     sda_pin = sda;
+    delay_us = delay;
 
     gpio_set_pull_mode(scl_pin,GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(sda_pin,GPIO_PULLUP_ONLY);
