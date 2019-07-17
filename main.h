@@ -9,8 +9,11 @@
 
 #include <iostream>
 
+#include "fonts.h"
+#include "i2c.h"
+
 int main()
 {
-    std::cout << "Hello world!\n";
+    std::cout << "Hello there!\n";
     return 0;
 }

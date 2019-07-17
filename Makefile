@@ -6,4 +6,5 @@ PROJECT_NAME := iot
 
 include $(IDF_PATH)/make/project.mk
 
-COMPONENT_LDFLAGS += -lstdc++
+COMPONENT_CPPFLAGS += -Wno-error=comment
+COMPONENT_LDFLAGS  += -lstdc++
