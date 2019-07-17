@@ -29,6 +29,7 @@ class OLED {
 private:
 	I2C *i2c;
 	ssd1306_panel_type_t type;
+        gpio_num_t rst_pin;     // reset pin
 	uint8_t address;        // I2C address
 	uint8_t *buffer;        // display buffer
 	uint8_t width;          // panel width (128)
@@ -43,20 +44,13 @@ private:
 public:
 	/**
 	 * @brief   Constructor
-	 * @param   scl_pin  SCL Pin
-	 * @param   sda_pin  SDA Pin
-	 * @param   type     Panel type
-	 */
-	OLED(gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type);
-	/**
-	 * @brief   Constructor
+         * @param   rst_pin  OLED RESET Pin
 	 * @param   scl_pin  SCL Pin
 	 * @param   sda_pin  SDA Pin
 	 * @param   type     Panel type
 	 * @param   address  I2C Address(usually 0x78)
 	 */
-	OLED(gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type,
-			uint8_t address);
+	OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type, uint8_t address);
 	/**
 	 * @brief   Initialize OLED panel
 	 * @return  true if successful
@@ -216,8 +210,8 @@ public:
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
-OLED::OLED(gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type,
-		uint8_t address) {
+OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type, uint8_t address) {
+        this->rst_pin = rst;
 	i2c = new I2C(scl, sda);
 	this->type = type;
 	this->address = address;
@@ -234,26 +228,6 @@ OLED::OLED(gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type,
 		height = 32;
 		break;
 	}
-}
-
-OLED::OLED(gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type) {
-	i2c = new I2C(scl, sda);
-	this->type = type;
-	this->address = 0x78;
-
-	switch (type) {
-	case SSD1306_128x64:
-		buffer = (uint8_t*) malloc(1024); // 128 * 64 / 8
-		width = 128;
-		height = 64;
-		break;
-	case SSD1306_128x32:
-		buffer = (uint8_t*) malloc(512);  // 128 * 32 / 8
-		width = 128;
-		height = 32;
-		break;
-	}
-
 }
 
 void OLED::command(uint8_t adress, uint8_t c) {
@@ -279,7 +253,10 @@ void OLED::data(uint8_t adress, uint8_t d) {
 }
 
 bool OLED::init() {
-	term();
+        gpio_set_direction(rst_pin, GPIO_MODE_INPUT_OUTPUT);
+        gpio_set_level(rst_pin, 0);
+        ets_delay_us(50);
+        gpio_set_level(rst_pin,1);
 
 	switch (type) {
 	case SSD1306_128x64:

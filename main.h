@@ -13,8 +13,8 @@
 
 int main()
 {
-    //             SCL        SDA         Resolution   I2C Addr
-    OLED oled( GPIO_NUM_15, GPIO_NUM_4, SSD1306_128x64, 0x3c );
+    //             RST          SCL          SDA       Resolution    I2C Addr
+    OLED oled( GPIO_NUM_16, GPIO_NUM_15, GPIO_NUM_4, SSD1306_128x64, 0x3c );
     if ( oled.init() ) {
         std::cout << "OLED initialized\n";
         oled.clear();
