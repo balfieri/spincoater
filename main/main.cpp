@@ -7,15 +7,11 @@
 // CONDITIONS OF ANY KIND, either express or implied.
 //-------------------------------------------------------------------
 
-#include <stdio.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
-#include "esp_spi_flash.h"
+#include <iostream>
 
+extern "C" {
 void app_main()
 {
-    printf("Hello world!\n");
-    fflush(stdout);
-    esp_restart();
+    std::cout << "Hello world!\n";
+}
 }
