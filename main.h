@@ -13,6 +13,16 @@
 
 int main()
 {
-    std::cout << "Hello there!\n";
+    //             SCL        SDA         Resolution   I2C Addr
+    OLED oled( GPIO_NUM_15, GPIO_NUM_4, SSD1306_128x64, 0x3c );
+    if ( oled.init() ) {
+        std::cout << "OLED initialized\n";
+        oled.clear();
+        oled.select_font( 1 );
+        oled.draw_string( 0, 0, "Hi, OLED!", WHITE, BLACK );
+        oled.refresh( true );
+    } else {
+        std::cout << "OLED did not initialize\n";
+    } 
     return 0;
 }
