@@ -15,13 +15,13 @@
 
 class MAX6675 {
 public:
-    MAX6675(gpio_num_t SCLK, gpio_num_t CS, gpio_num_t MISO);
+    MAX6675(gpio_num_t CS, gpio_num_t SCLK, gpio_num_t MISO);
 
     double readC(void); // Celsius
     double readF(void) { return readC() * 9.0/5.0 + 32; }
 
 private:
-    gpio_num_t sclk, cs, miso;
+    gpio_num_t cs, sclk, miso;
     uint8_t spiread(void);
 };
 
@@ -39,9 +39,9 @@ private:
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
-MAX6675::MAX6675(gpio_num_t SCLK, gpio_num_t CS, gpio_num_t MISO) {
-    sclk = SCLK;
+MAX6675::MAX6675(gpio_num_t CS, gpio_num_t SCLK, gpio_num_t MISO) {
     cs = CS;
+    sclk = SCLK;
     miso = MISO;
 
     gpio_set_direction(sclk, GPIO_MODE_OUTPUT);
