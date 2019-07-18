@@ -212,7 +212,7 @@ public:
 
 OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type, uint8_t address) {
         this->rst_pin = rst;
-	i2c = new I2C(scl, sda, 10);
+	i2c = new I2C(scl, sda, 1);
 	this->type = type;
 	this->address = address;
 
@@ -253,12 +253,13 @@ void OLED::data(uint8_t adress, uint8_t d) {
 }
 
 bool OLED::init() {
-        // reset the OLED
-        gpio_set_direction(rst_pin, GPIO_MODE_INPUT_OUTPUT);
+        // Reset the OLED
+        gpio_set_direction(rst_pin, GPIO_MODE_OUTPUT);
         gpio_set_level(rst_pin, 0);
         ets_delay_us(50);
         gpio_set_level(rst_pin,1);
 
+        // Allocate frame buffer
 	switch (type) {
 	case SSD1306_128x64:
 		buffer = (uint8_t*) malloc(1024); // 128 * 64 / 8
@@ -269,85 +270,86 @@ bool OLED::init() {
 	}
 
 	if (buffer == NULL) {
-		ESP_LOGE("oled", "Alloc OLED buffer failed.");
-		goto oled_init_fail;
+		ESP_LOGE("OLED", "Buffer alloc failed.");
+                return false;
 	}
 
-	// Panel initialization
-	// Try send I2C address check if the panel is connected
+        // Make sure I2C works
 	i2c->start();
 	if (!i2c->write(address)) {
 		i2c->stop();
-		ESP_LOGE("oled", "OLED I2C bus not responding.");
-		goto oled_init_fail;
+		ESP_LOGE("OLED", "I2C bus not responding.");
+		free(buffer);
+                return false;
 	}
 	i2c->stop();
 
-	// Now we assume all sending will be successful
-	if (type == SSD1306_128x64) {
-		command(address, 0xae); // SSD1306_DISPLAYOFF
-		command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
-		command(address, 0x80); // Suggested value 0x80
-		command(address, 0xa8); // SSD1306_SETMULTIPLEX
-		command(address, 0x3f); // 1/64
-		command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
-		command(address, 0x00); // 0 no offset
-		command(address, 0x40); // SSD1306_SETSTARTLINE line #0
-		command(address, 0x20); // SSD1306_MEMORYMODE
-		command(address, 0x00); // 0x0 act like ks0108
-		command(address, 0xa1); // SSD1306_SEGREMAP | 1
-		command(address, 0xc8); // SSD1306_COMSCANDEC
-		command(address, 0xda); // SSD1306_SETCOMPINS
-		command(address, 0x12);
-		command(address, 0x81); // SSD1306_SETCONTRAST
-		command(address, 0xcf);
-		command(address, 0xd9); // SSD1306_SETPRECHARGE
-		command(address, 0xf1);
-		command(address, 0xdb); // SSD1306_SETVCOMDETECT
-		command(address, 0x30);
-		command(address, 0x8d); // SSD1306_CHARGEPUMP
-		command(address, 0x14); // Charge pump on
-		command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
-		command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
-		command(address, 0xa6); // SSD1306_NORMALDISPLAY
-	} else if (type == SSD1306_128x32) {
-		command(address, 0xae); // SSD1306_DISPLAYOFF
-		command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
-		command(address, 0x80); // Suggested value 0x80
-		command(address, 0xa8); // SSD1306_SETMULTIPLEX
-		command(address, 0x1f); // 1/32
-		command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
-		command(address, 0x00); // 0 no offset
-		command(address, 0x40); // SSD1306_SETSTARTLINE line #0
-		command(address, 0x8d); // SSD1306_CHARGEPUMP
-		command(address, 0x14); // Charge pump on
-		command(address, 0x20); // SSD1306_MEMORYMODE
-		command(address, 0x00); // 0x0 act like ks0108
-		command(address, 0xa1); // SSD1306_SEGREMAP | 1
-		command(address, 0xc8); // SSD1306_COMSCANDEC
-		command(address, 0xda); // SSD1306_SETCOMPINS
-		command(address, 0x02);
-		command(address, 0x81); // SSD1306_SETCONTRAST
-		command(address, 0x2f);
-		command(address, 0xd9); // SSD1306_SETPRECHARGE
-		command(address, 0xf1);
-		command(address, 0xdb); // SSD1306_SETVCOMDETECT
-		command(address, 0x40);
-		command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
-		command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
-		command(address, 0xa6); // SSD1306_NORMALDISPLAY
-	}
+        if (false) {
+                // This should not be needed because we did a reset above.
+                // Now we assume all sending will be successful
+                if (type == SSD1306_128x64) {
+                        command(address, 0xae); // SSD1306_DISPLAYOFF
+                        command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
+                        command(address, 0x80); // Suggested value 0x80
+                        command(address, 0xa8); // SSD1306_SETMULTIPLEX
+                        command(address, 0x3f); // 1/64
+                        command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
+                        command(address, 0x00); // 0 no offset
+                        command(address, 0x40); // SSD1306_SETSTARTLINE line #0
+                        command(address, 0x20); // SSD1306_MEMORYMODE
+                        command(address, 0x00); // 0x0 act like ks0108
+                        command(address, 0xa1); // SSD1306_SEGREMAP | 1
+                        command(address, 0xc8); // SSD1306_COMSCANDEC
+                        command(address, 0xda); // SSD1306_SETCOMPINS
+                        command(address, 0x12);
+                        command(address, 0x81); // SSD1306_SETCONTRAST
+                        command(address, 0xcf);
+                        command(address, 0xd9); // SSD1306_SETPRECHARGE
+                        command(address, 0xf1);
+                        command(address, 0xdb); // SSD1306_SETVCOMDETECT
+                        command(address, 0x30);
+                        command(address, 0x8d); // SSD1306_CHARGEPUMP
+                        command(address, 0x14); // Charge pump on
+                        command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
+                        command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
+                        command(address, 0xa6); // SSD1306_NORMALDISPLAY
+                } else if (type == SSD1306_128x32) {
+                        command(address, 0xae); // SSD1306_DISPLAYOFF
+                        command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
+                        command(address, 0x80); // Suggested value 0x80
+                        command(address, 0xa8); // SSD1306_SETMULTIPLEX
+                        command(address, 0x1f); // 1/32
+                        command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
+                        command(address, 0x00); // 0 no offset
+                        command(address, 0x40); // SSD1306_SETSTARTLINE line #0
+                        command(address, 0x8d); // SSD1306_CHARGEPUMP
+                        command(address, 0x14); // Charge pump on
+                        command(address, 0x20); // SSD1306_MEMORYMODE
+                        command(address, 0x00); // 0x0 act like ks0108
+                        command(address, 0xa1); // SSD1306_SEGREMAP | 1
+                        command(address, 0xc8); // SSD1306_COMSCANDEC
+                        command(address, 0xda); // SSD1306_SETCOMPINS
+                        command(address, 0x02);
+                        command(address, 0x81); // SSD1306_SETCONTRAST
+                        command(address, 0x2f);
+                        command(address, 0xd9); // SSD1306_SETPRECHARGE
+                        command(address, 0xf1);
+                        command(address, 0xdb); // SSD1306_SETVCOMDETECT
+                        command(address, 0x40);
+                        command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
+                        command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
+                        command(address, 0xa6); // SSD1306_NORMALDISPLAY
+                }
+        }
 
 	clear();
 	refresh(true);
 
-	command(address, 0xaf); // SSD1306_DISPLAYON
+	if (false) {
+                command(address, 0xaf); // SSD1306_DISPLAYON
+        }
 
 	return true;
-
-	oled_init_fail: if (buffer)
-		free(buffer);
-	return false;
 }
 
 void OLED::term() {
