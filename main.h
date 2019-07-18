@@ -17,6 +17,7 @@
 
 int main()
 {
+    // I2C OLED
     //             RST          SCL          SDA       Resolution    I2C Addr
     OLED oled( GPIO_NUM_16, GPIO_NUM_15, GPIO_NUM_4, SSD1306_128x64, 0x3c );
     if ( oled.init() ) {
@@ -32,13 +33,15 @@ int main()
 
     for( ;; )
     {
-        double C = temp.readC();
         std::cout << "\n";
+
+        double C = temp.readC();
+        double F = 32.0 + 9.0/5.0 * C;
         std::cout << "Temperature: ";
         if ( __isnand(C) ) {
             std::cout << "no thermocouple attached!\n";
         } else {
-            std::cout << C << "C\n";
+            std::cout << C << "C (" << F << "F)\n";
         }
 
         MPU9255::Raw_Info raw;
