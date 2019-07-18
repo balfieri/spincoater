@@ -14,6 +14,7 @@
 #include "oled.h"
 #include "max6675.h"            // temperature sensor
 #include "mpu9255.h"            // motion and temperature sensor
+#include "driver/adc.h"         // analog inputs
 
 int main()
 {
@@ -30,6 +31,10 @@ int main()
     // SPI sensors     CS          SCLK        MISI          MISO
     MAX6675 temp( GPIO_NUM_13, GPIO_NUM_18,              GPIO_NUM_19 );
     MPU9255 mpu(  GPIO_NUM_5,  GPIO_NUM_18, GPIO_NUM_23, GPIO_NUM_19 );
+
+    // Sound Sensor (analog)
+    adc1_config_width( ADC_WIDTH_BIT_12 );
+    adc1_config_channel_atten( ADC1_CHANNEL_0, ADC_ATTEN_DB_0 );
 
     for( ;; )
     {
@@ -49,6 +54,10 @@ int main()
         std::cout << "Raw Accel:   [" << raw.accel[0] << ", " << raw.accel[1] << ", " << raw.accel[2] << "]\n";
         std::cout << "Raw Temp:    " << raw.temp << "\n";
         std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
+
+        int32_t sound = adc1_get_raw( ADC1_CHANNEL_0 );
+        std::cout << "Raw Sound:   " << sound << "\n";
+
         ets_delay_us( 1000000 );
     }
 
