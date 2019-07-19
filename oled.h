@@ -230,28 +230,6 @@ OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t 
 	}
 }
 
-void OLED::command(uint8_t adress, uint8_t c) {
-	bool ret;
-	i2c->start();
-	ret = i2c->write(adress);
-	if (!ret) // NACK
-		i2c->stop();
-	i2c->write(0x00);    // Co = 0, D/C = 0
-	i2c->write(c);
-	i2c->stop();
-}
-
-void OLED::data(uint8_t adress, uint8_t d) {
-	bool ret;
-	i2c->start();
-	ret = i2c->write(adress);
-	if (!ret) // NACK
-		i2c->stop();
-	i2c->write(0x40);    // Co = 0, D/C = 1
-	i2c->write(d);
-	i2c->stop();
-}
-
 bool OLED::init() {
         // Reset the OLED
         gpio_set_direction(rst_pin, GPIO_MODE_OUTPUT);
@@ -350,6 +328,28 @@ bool OLED::init() {
         }
 
 	return true;
+}
+
+void OLED::command(uint8_t adress, uint8_t c) {
+	bool ret;
+	i2c->start();
+	ret = i2c->write(adress);
+	if (!ret) // NACK
+		i2c->stop();
+	i2c->write(0x00);    // Co = 0, D/C = 0
+	i2c->write(c);
+	i2c->stop();
+}
+
+void OLED::data(uint8_t adress, uint8_t d) {
+	bool ret;
+	i2c->start();
+	ret = i2c->write(adress);
+	if (!ret) // NACK
+		i2c->stop();
+	i2c->write(0x40);    // Co = 0, D/C = 1
+	i2c->write(d);
+	i2c->stop();
 }
 
 void OLED::term() {
