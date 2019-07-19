@@ -11,6 +11,8 @@
 #include <string>
 
 #include "delay.h"              
+#include "nvs_flash.h"
+#include "wifi.h"
 #include "math.h"
 #include "oled.h"
 #include "max6675.h"            // temperature sensor
@@ -19,6 +21,17 @@
 
 int main()
 {
+    // NVS
+    esp_err_t ret = nvs_flash_init();
+    if ( ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND ) {
+      ESP_ERROR_CHECK( nvs_flash_erase() );
+      ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+
+    // WIFI
+    WiFi::init( CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD, CONFIG_WIFI_MAX_RETRIES );
+
     // I2C OLED
     //             RST          SCL          SDA       Resolution    I2C Addr
     OLED oled( GPIO_NUM_16, GPIO_NUM_15, GPIO_NUM_4, SSD1306_128x64, 0x3c );
