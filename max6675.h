@@ -10,8 +10,8 @@
 
 #include <cmath>
 
+#include "delay.h"
 #include "driver/gpio.h"
-#include "rom/ets_sys.h"
 
 class MAX6675 {
 public:
@@ -55,7 +55,7 @@ double MAX6675::readC(void) {
     uint16_t v;
 
     gpio_set_level(cs, 0);
-    ets_delay_us(1000);
+    Delay::msec(1);
 
     v = spiread();
     v <<= 8;
@@ -80,13 +80,13 @@ uint8_t MAX6675::spiread(void) {
     for (i=7; i>=0; i--)
     {
         gpio_set_level(sclk, 0);
-        ets_delay_us(1000);
+        Delay::msec(1);
         if (gpio_get_level(miso)) {
             d |= (1 << i);
         }
 
         gpio_set_level(sclk, 1);
-        ets_delay_us(1000);
+        Delay::msec(1);
     }
 
     return d;

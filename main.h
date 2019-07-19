@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 
+#include "delay.h"              
 #include "math.h"
 #include "oled.h"
 #include "max6675.h"            // temperature sensor
@@ -61,7 +62,7 @@ int main()
         int32_t hall = hall_sensor_read();
         std::cout << "Raw Hall:    " << hall << "\n";
 
-        ets_delay_us( 1000000 );
+        Delay::sec( 1 );
     }
 
     return 0;

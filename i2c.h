@@ -3,8 +3,8 @@
 #ifndef I2C_H_
 #define I2C_H_
 
+#include "delay.h"
 #include "driver/gpio.h"
-#include "rom/ets_sys.h"
 
 class I2C {
 private:
@@ -33,7 +33,7 @@ public:
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define _DELAY ets_delay_us(delay_us)
+#define _DELAY Delay::usec(delay_us)
 #define _SDA1 gpio_set_level(sda_pin,1)
 #define _SDA0 gpio_set_level(sda_pin,0)
 

@@ -26,7 +26,7 @@ public:
 private:
     gpio_num_t cs, sclk, misi, miso;
 
-    const uint32_t spi_delay = 10000;
+    const uint32_t spi_delay_us = 1000;
 
     void    spi_write( uint8_t d );
     uint8_t spi_read( void );
@@ -64,7 +64,7 @@ MPU9255::MPU9255( gpio_num_t CS, gpio_num_t SCLK, gpio_num_t MISI, gpio_num_t MI
 bool MPU9255::raw_read( Raw_Info& raw )
 {
     gpio_set_level( cs, 0 );
-    ets_delay_us( spi_delay );
+    Delay::usec( spi_delay_us );
     spi_write( 0x80 | 0x3b );  // 0x3b is start of raw data
 
     raw.accel[0] = (spi_read() << 8) | spi_read();
@@ -84,10 +84,10 @@ void MPU9255::spi_write( uint8_t d )
     for( int i=7; i >= 0; i-- )
     {
         gpio_set_level( sclk, 0 );
-        ets_delay_us( spi_delay );
+        Delay::usec( spi_delay_us );
         gpio_set_level( misi, (d >> i) & 1 );
         gpio_set_level( sclk, 1 );
-        ets_delay_us( spi_delay );
+        Delay::usec( spi_delay_us );
     }
 }
 
@@ -98,10 +98,10 @@ uint8_t MPU9255::spi_read( void )
     for( int i=7; i >= 0; i-- )
     {
         gpio_set_level( sclk, 0 );
-        ets_delay_us( spi_delay );
+        Delay::usec( spi_delay_us );
         d |= gpio_get_level( miso ) << i;
         gpio_set_level( sclk, 1 );
-        ets_delay_us( spi_delay );
+        Delay::usec( spi_delay_us );
     }
 
     return d;
