@@ -16,13 +16,13 @@ public:
     // this data requires conversions
     struct Raw_Info
     {
-        uint16_t accel[3];
-        uint16_t temp;
-        uint16_t gyro[3];
+        int16_t accel[3];
+        int16_t temp;
+        int16_t gyro[3];
     };
 
     bool   raw_read( Raw_Info& raw );
-    double raw_temp_to_C( uint16_t raw_temp );
+    double raw_temp_to_C( int16_t raw_temp );
 
 private:
     gpio_num_t cs, sclk, misi, miso;
@@ -80,7 +80,7 @@ bool MPU9255::raw_read( Raw_Info& raw )
     return true;
 }
 
-double MPU9255::raw_temp_to_C( uint16_t raw_temp )
+double MPU9255::raw_temp_to_C( int16_t raw_temp )
 {
     return double(raw_temp)/333.87 + 21.0;
 }
