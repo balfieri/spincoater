@@ -65,8 +65,10 @@ int main()
 
         MPU9255::Raw_Info raw;
         mpu.raw_read( raw );
+        C = mpu.raw_temp_to_C( raw.temp );
+        F = 32.0 + 9.0/5.0 * C;
         std::cout << "Raw Accel:   [" << raw.accel[0] << ", " << raw.accel[1] << ", " << raw.accel[2] << "]\n";
-        std::cout << "Raw Temp:    " << raw.temp << "\n";
+        std::cout << "Raw Temp:    " << raw.temp << " (" << C << "C, " << F << "F)\n";
         std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
 
         int32_t sound = adc1_get_raw( ADC1_CHANNEL_6 );

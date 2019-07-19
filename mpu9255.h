@@ -21,7 +21,8 @@ public:
         uint16_t gyro[3];
     };
 
-    bool raw_read( Raw_Info& raw );
+    bool   raw_read( Raw_Info& raw );
+    double raw_temp_to_C( uint16_t raw_temp );
 
 private:
     gpio_num_t cs, sclk, misi, miso;
@@ -77,6 +78,11 @@ bool MPU9255::raw_read( Raw_Info& raw )
 
     gpio_set_level( cs, 1 );
     return true;
+}
+
+double MPU9255::raw_temp_to_C( uint16_t raw_temp )
+{
+    return double(raw_temp)/333.87 + 21.0;
 }
 
 void MPU9255::spi_write( uint8_t d )
