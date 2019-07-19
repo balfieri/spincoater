@@ -32,7 +32,7 @@ int main()
     MAX6675 temp( GPIO_NUM_13, GPIO_NUM_18,              GPIO_NUM_19 );
     MPU9255 mpu(  GPIO_NUM_5,  GPIO_NUM_18, GPIO_NUM_23, GPIO_NUM_19 );
 
-    // Sound Sensor (analog)
+    // ADC sensors
     adc1_config_width( ADC_WIDTH_BIT_12 );
     adc1_config_channel_atten( ADC1_CHANNEL_0, ADC_ATTEN_DB_0 );
 
@@ -55,8 +55,11 @@ int main()
         std::cout << "Raw Temp:    " << raw.temp << "\n";
         std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
 
-        int32_t sound = adc1_get_raw( ADC1_CHANNEL_0 );
+        int32_t sound = adc1_get_raw( ADC1_CHANNEL_6 );
         std::cout << "Raw Sound:   " << sound << "\n";
+
+        int32_t hall = hall_sensor_read();
+        std::cout << "Raw Hall:    " << hall << "\n";
 
         ets_delay_us( 1000000 );
     }
