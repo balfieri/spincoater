@@ -70,7 +70,7 @@ double MAX6675::readC(void) {
 
     v >>= 3;
 
-    return v*0.25;
+    return double(v)*0.25;
 }
 
 uint8_t MAX6675::spiread(void) { 

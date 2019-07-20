@@ -63,19 +63,21 @@ int main()
             std::cout << C << "C (" << F << "F)\n";
         }
 
-        MPU9255::Raw_Info raw;
-        mpu.raw_read( raw );
-        C = mpu.raw_temp_to_C( raw.temp );
-        F = 32.0 + 9.0/5.0 * C;
-        std::cout << "Raw Accel:   [" << raw.accel[0] << ", " << raw.accel[1] << ", " << raw.accel[2] << "]\n";
-        std::cout << "Raw Temp:    " << raw.temp << " (" << C << "C, " << F << "F)\n";
-        std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
+        if ( false ) {
+            MPU9255::Raw_Info raw;
+            mpu.raw_read( raw );
+            C = mpu.raw_temp_to_C( raw.temp );
+            F = 32.0 + 9.0/5.0 * C;
+            std::cout << "Raw Accel:   [" << raw.accel[0] << ", " << raw.accel[1] << ", " << raw.accel[2] << "]\n";
+            std::cout << "Raw Temp:    " << raw.temp << " (" << C << "C, " << F << "F)\n";
+            std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
 
-        int32_t sound = adc1_get_raw( ADC1_CHANNEL_6 );
-        std::cout << "Raw Sound:   " << sound << "\n";
+            int32_t sound = adc1_get_raw( ADC1_CHANNEL_6 );
+            std::cout << "Raw Sound:   " << sound << "\n";
 
-        int32_t hall = hall_sensor_read();
-        std::cout << "Raw Hall:    " << hall << "\n";
+            int32_t hall = hall_sensor_read();
+            std::cout << "Raw Hall:    " << hall << "\n";
+        }
 
         Delay::sec( 1 );
     }
