@@ -21,6 +21,7 @@
 
 int main()
 {
+#if 0
     // NVS
     esp_err_t ret = nvs_flash_init();
     if ( ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND ) {
@@ -41,17 +42,21 @@ int main()
         oled.draw_string( 0, 0, "Hi, OLED!", WHITE, BLACK );
         oled.refresh( true );
     } 
+#endif
 
     // SPI sensors     CS          SCLK        MISI          MISO
-    MAX6675 temp( GPIO_NUM_13, GPIO_NUM_18,              GPIO_NUM_19 );
+    MAX6675 temp( GPIO_NUM_5, GPIO_NUM_18,              GPIO_NUM_19 );
+#if 0
     MPU9255 mpu(  GPIO_NUM_5,  GPIO_NUM_18, GPIO_NUM_23, GPIO_NUM_19 );
 
     // ADC sensors
     adc1_config_width( ADC_WIDTH_BIT_12 );
     adc1_config_channel_atten( ADC1_CHANNEL_6, ADC_ATTEN_DB_0 );
+#endif
 
     for( ;; )
     {
+        Delay::sec( 1 );
         std::cout << "\n";
 
         double C = temp.readC();
@@ -63,23 +68,21 @@ int main()
             std::cout << C << "C (" << F << "F)\n";
         }
 
-        if ( false ) {
-            MPU9255::Raw_Info raw;
-            mpu.raw_read( raw );
-            C = mpu.raw_temp_to_C( raw.temp );
-            F = 32.0 + 9.0/5.0 * C;
-            std::cout << "Raw Accel:   [" << raw.accel[0] << ", " << raw.accel[1] << ", " << raw.accel[2] << "]\n";
-            std::cout << "Raw Temp:    " << raw.temp << " (" << C << "C, " << F << "F)\n";
-            std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
+#if 0
+        MPU9255::Raw_Info raw;
+        mpu.raw_read( raw );
+        C = mpu.raw_temp_to_C( raw.temp );
+        F = 32.0 + 9.0/5.0 * C;
+        std::cout << "Raw Accel:   [" << raw.accel[0] << ", " << raw.accel[1] << ", " << raw.accel[2] << "]\n";
+        std::cout << "Raw Temp:    " << raw.temp << " (" << C << "C, " << F << "F)\n";
+        std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
 
-            int32_t sound = adc1_get_raw( ADC1_CHANNEL_6 );
-            std::cout << "Raw Sound:   " << sound << "\n";
+        int32_t sound = adc1_get_raw( ADC1_CHANNEL_6 );
+        std::cout << "Raw Sound:   " << sound << "\n";
 
-            int32_t hall = hall_sensor_read();
-            std::cout << "Raw Hall:    " << hall << "\n";
-        }
-
-        Delay::sec( 1 );
+        int32_t hall = hall_sensor_read();
+        std::cout << "Raw Hall:    " << hall << "\n";
+#endif
     }
 
     return 0;
