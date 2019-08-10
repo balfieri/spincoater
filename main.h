@@ -19,71 +19,104 @@
 #include "mpu9255.h"            // motion and temperature sensor
 #include "driver/adc.h"         // analog inputs
 
+// Profiles for Various Solder Pastes
+//
+struct Point 
+{
+    int   time_sec;             // when?
+    float C_target;             // target temperature in C
+};
+
+struct Profile 
+{
+    const char *        name;
+    const Point *       points;
+    int                 point_cnt;     
+};
+
+const Point chipquik_lead_free[] = 
+{
+    {  90, 150 },
+    { 180, 175 },
+    { 210, 217 },
+    { 240, 249 },
+    { 270, 217 },
+    { 300, 150 },
+};
+
+const Profile profiles[] = 
+{
+    { "ChipQuik Lead-Free Sn96.5/Ag3.0/Cu0.5 (T5)",
+      chipquik_lead_free,
+      sizeof( chipquik_lead_free ) / sizeof( chipquik_lead_free[0] ) },
+};
+
+const int profile_cnt = sizeof( profiles ) / sizeof( profiles[0] );
+
 int main()
 {
-#if 0
-    // NVS
-    esp_err_t ret = nvs_flash_init();
-    if ( ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND ) {
-      ESP_ERROR_CHECK( nvs_flash_erase() );
-      ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK( ret );
+    // OVEN RELAY   
+    int relay_n = 1; 
+    gpio_num_t relay_pin = GPIO_NUM_25;
+    gpio_set_direction( relay_pin, GPIO_MODE_OUTPUT );
+    gpio_set_level( relay_pin, relay_n );
 
-    // WIFI
-    WiFi::init( CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD, CONFIG_WIFI_MAX_RETRIES );
-
-    // I2C OLED
-    //             RST          SCL          SDA       Resolution    I2C Addr
-    OLED oled( GPIO_NUM_16, GPIO_NUM_15, GPIO_NUM_4, SSD1306_128x64, 0x3c );
-    if ( oled.init() ) {
-        oled.clear();
-        oled.select_font( 1 );
-        oled.draw_string( 0, 0, "Hi, OLED!", WHITE, BLACK );
-        oled.refresh( true );
-    } 
-#endif
-
-    // SPI sensors     CS          SCLK        MISI          MISO
+    // Sensors        CS          SCLK        MISI          MISO
     MAX6675 temp( GPIO_NUM_5, GPIO_NUM_18,              GPIO_NUM_19 );
-#if 0
-    MPU9255 mpu(  GPIO_NUM_5,  GPIO_NUM_18, GPIO_NUM_23, GPIO_NUM_19 );
+    #define F( c ) (32.0 + 9.0/5.0*c)
 
-    // ADC sensors
-    adc1_config_width( ADC_WIDTH_BIT_12 );
-    adc1_config_channel_atten( ADC1_CHANNEL_6, ADC_ATTEN_DB_0 );
-#endif
+    // Choose Profile
+    const Profile& profile = profiles[0];
 
-    for( ;; )
+    float C_start = 25.0;
+    float C       = temp.readC();
+    float C_max   = C;
+    int   t = 0;       // in seconds
+    int   t_start = 0; 
+    int   p = -1;      // point index
+    for( ;; ) 
     {
+        // tick one second
         Delay::sec( 1 );
+        t++;
+
+        // see if we need to move to the next point 
+        if ( p == -1 || t >= profile.points[p].time_sec ) {
+            t_start = t - 1;
+            p++;
+            if ( p == profile.point_cnt ) break;
+            if ( p > 0 ) C_start = profile.points[p-1].C_target;
+        }
+
+        // read current temperature
+        C = temp.readC();
+        if ( C > C_max ) C_max = C;
+
+        // Figure out the new slope to use to hit the target temp.
+        // Then figure out the target at this point in time.
+        float slope   = ( profile.points[p].C_target - C ) / float( profile.points[p].time_sec - t_start );
+        float C_t     = float( t - t_start )*slope + C_start;
+
         std::cout << "\n";
 
-        double C = temp.readC();
-        double F = 32.0 + 9.0/5.0 * C;
-        std::cout << "Temperature: ";
+        std::cout << profile.name << "\n";
+
+        std::cout << "Time:     " << t << " secs\n";
+        std::cout << "Current:  ";
         if ( __isnand(C) ) {
             std::cout << "no thermocouple attached!\n";
         } else {
-            std::cout << C << "C (" << F << "F)\n";
+            std::cout << C << "C  (" << F(C) << "F)\n";
         }
+        std::cout << "Max Seen: " << C_max << "C  (" << F(C_max) << "F)\n";
+        std::cout << "Target:   " << C_t   << "C  (" << F(C_t)   << "F)\n";
 
-#if 0
-        MPU9255::Raw_Info raw;
-        mpu.raw_read( raw );
-        C = mpu.raw_temp_to_C( raw.temp );
-        F = 32.0 + 9.0/5.0 * C;
-        std::cout << "Raw Accel:   [" << raw.accel[0] << ", " << raw.accel[1] << ", " << raw.accel[2] << "]\n";
-        std::cout << "Raw Temp:    " << raw.temp << " (" << C << "C, " << F << "F)\n";
-        std::cout << "Raw Gyro:    [" << raw.gyro[0] << ", " << raw.gyro[1] << ", " << raw.gyro[2] << "]\n";
-
-        int32_t sound = adc1_get_raw( ADC1_CHANNEL_6 );
-        std::cout << "Raw Sound:   " << sound << "\n";
-
-        int32_t hall = hall_sensor_read();
-        std::cout << "Raw Hall:    " << hall << "\n";
-#endif
+        relay_n = C >= C_t;
+        std::cout << "Relay:    " << (relay_n ? "OFF" : "ON") << "\n";
+        gpio_set_level( relay_pin, relay_n );
     }
 
+    gpio_set_level( relay_pin, 1 ); // OFF
+    for( ;; ) {}
     return 0;
 }
