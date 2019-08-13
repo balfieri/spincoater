@@ -30,11 +30,12 @@ class OLED {
 private:
 	I2C *i2c;
 	ssd1306_panel_type_t type;
-        gpio_num_t rst_pin;     // reset pin
-	uint8_t address;        // I2C address
-	uint8_t *buffer;        // display buffer
-	uint8_t width;          // panel width (128)
-	uint8_t height;         // panel height (32 or 64)
+        gpio_num_t rst_pin;       // reset pin
+	uint8_t address;          // I2C address
+	uint8_t *buffer;          // display buffer
+        uint32_t buffer_byte_cnt; // number of bytes in buffer
+	uint8_t width;            // panel width (128)
+	uint8_t height;           // panel height (32 or 64)
 	uint8_t refresh_top = 0;    // "Dirty" window
 	uint8_t refresh_left = 0;
 	uint8_t refresh_right = 0;
@@ -213,22 +214,19 @@ public:
 
 #define GPIO_NUM_NC gpio_num_t(-1)
 
-OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type, uint8_t address) {
-        this->rst_pin = rst;
+OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t _type, uint8_t _address) {
+        rst_pin = rst;
 	i2c = new I2C(scl, sda, 1000);
-	this->type = type;
-	this->address = address;
+	type = _type;
+	address = _address;
+        buffer = NULL;
 
 	switch (type) {
 	case SSD1306_128x64:
-		buffer = NULL;
-		width = 128;
-		height = 64;
-		break;
 	case SSD1306_128x32:
-		buffer = NULL;
 		width = 128;
-		height = 32;
+		height = (type == SSD1306_128x64) ? 64 : 32;
+                buffer_byte_cnt = width*height/8;
 		break;
         default:
                 ESP_LOGE("OLED", "Unknown OLED type" );
@@ -245,15 +243,7 @@ bool OLED::init() {
         }
 
         // Allocate frame buffer
-	switch (type) {
-	case SSD1306_128x64:
-		buffer = (uint8_t*) malloc(1024); // 128 * 64 / 8
-		break;
-	case SSD1306_128x32:
-		buffer = (uint8_t*) malloc(512);  // 128 * 32 / 8
-		break;
-	}
-
+        buffer = (uint8_t*) malloc(width*height/8); 
 	if (buffer == NULL) {
 		ESP_LOGE("OLED", "Buffer alloc failed.");
                 return false;
@@ -271,36 +261,31 @@ bool OLED::init() {
 
         if (rst_pin == GPIO_NUM_NC) {
                 // No reset pin => do actual init
-                if (type == SSD1306_128x64 || type == SSD1306_128x32) {
-                        command(address, 0xae); // SSD1306_DISPLAYOFF
-                        command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
-                        command(address, 0x80); // Suggested value 0x80
-                        command(address, 0xa8); // SSD1306_SETMULTIPLEX
-                        command(address, height-1); // 1/64 or 1/32
-                        command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
-                        command(address, 0x00); // 0 no offset
-                        command(address, 0x40); // SSD1306_SETSTARTLINE line #0
-                        command(address, 0x20); // SSD1306_MEMORYMODE
-                        command(address, 0x00); // 0x0 act like ks0108
-                        command(address, 0xa1); // SSD1306_SEGREMAP | 1
-                        command(address, 0xc8); // SSD1306_COMSCANDEC
-                        command(address, 0xda); // SSD1306_SETCOMPINS
-                        command(address, (type == SSD1306_128x64) ? 0x12 : 0x02);
-                        command(address, 0x81); // SSD1306_SETCONTRAST
-                        command(address, (type == SSD1306_128x64) ? 0xcf : 0x2f);
-                        command(address, 0xd9); // SSD1306_SETPRECHARGE
-                        command(address, 0xf1);
-                        command(address, 0xdb); // SSD1306_SETVCOMDETECT
-                        command(address, (type == SSD1306_128x64) ? 0x30 : 0x40);
-                        command(address, 0x8d); // SSD1306_CHARGEPUMP
-                        command(address, 0x14); // Charge pump on
-                        command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
-                        command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
-                        command(address, 0xa6); // SSD1306_NORMALDISPLAY
-                } else {
-                    ESP_LOGE("OLED", "Unexpected OLED type" );
-                    return false;
-                }
+                command(address, 0xae); // SSD1306_DISPLAYOFF
+                command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
+                command(address, 0x80); // Suggested value 0x80
+                command(address, 0xa8); // SSD1306_SETMULTIPLEX
+                command(address, height-1); // 1/64 or 1/32
+                command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
+                command(address, 0x00); // 0 no offset
+                command(address, 0x40); // SSD1306_SETSTARTLINE line #0
+                command(address, 0x20); // SSD1306_MEMORYMODE
+                command(address, 0x00); // 0x0 act like ks0108
+                command(address, 0xa1); // SSD1306_SEGREMAP | 1
+                command(address, 0xc8); // SSD1306_COMSCANDEC
+                command(address, 0xda); // SSD1306_SETCOMPINS
+                command(address, (type == SSD1306_128x64) ? 0x12 : 0x02);
+                command(address, 0x81); // SSD1306_SETCONTRAST
+                command(address, (type == SSD1306_128x64) ? 0xcf : 0x2f);
+                command(address, 0xd9); // SSD1306_SETPRECHARGE
+                command(address, 0xf1);
+                command(address, 0xdb); // SSD1306_SETVCOMDETECT
+                command(address, (type == SSD1306_128x64) ? 0x30 : 0x40);
+                command(address, 0x8d); // SSD1306_CHARGEPUMP
+                command(address, 0x14); // Charge pump on
+                command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
+                command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
+                command(address, 0xa6); // SSD1306_NORMALDISPLAY
         }
 
 	clear();
@@ -353,7 +338,7 @@ uint8_t OLED::get_height() {
 }
 
 void OLED::clear() {
-        memset(buffer, 0, width*height);
+        memset(buffer, 0, width*height/8);
 	refresh_right = width - 1;
 	refresh_bottom = height - 1;
 	refresh_top = 0;
@@ -366,28 +351,23 @@ void OLED::refresh( bool force) {
 	uint8_t page_start, page_end;
 
 	if (force) {
-		switch (type) {
-		case SSD1306_128x64:
-		case SSD1306_128x32:
-			command(address, 0x21); // SSD1306_COLUMNADDR
-			command(address, 0);    // column start
-			command(address, 127);  // column end
-			command(address, 0x22); // SSD1306_PAGEADDR
-			command(address, 0);    // page start
-			command(address, height/8 - 1);  // page end 
-			for (k = 0; k < (width*height); k++) {
-				i2c->start();
-				i2c->write(address);
-				i2c->write(0x40);
-				for (j = 0; j < 16; ++j) {
-					i2c->write(buffer[k]);
-					++k;
-				}
-				--k;
-				i2c->stop();
-			}
-			break;
-		}
+                command(address, 0x21); // SSD1306_COLUMNADDR
+                command(address, 0);    // column start
+                command(address, 127);  // column end
+                command(address, 0x22); // SSD1306_PAGEADDR
+                command(address, 0);    // page start
+                command(address, height/8 - 1);  // page end 
+                for (k = 0; k < buffer_byte_cnt; k++) {
+                        i2c->start();
+                        i2c->write(address);
+                        i2c->write(0x40);
+                        for (j = 0; j < 16; ++j) {
+                                i2c->write(buffer[k]);
+                                ++k;
+                        }
+                        --k;
+                        i2c->stop();
+                }
 	} else {
 		if ((refresh_top <= refresh_bottom)
 				&& (refresh_left <= refresh_right)) {
@@ -842,20 +822,11 @@ uint8_t OLED::get_font_c() {
 }
 
 void OLED::invert_display(bool invert) {
-	if (invert)
-		command(address, 0xa7); // SSD1306_INVERTDISPLAY
-	else
-		command(address, 0xa6); // SSD1306_NORMALDISPLAY
-
+        command(address, 0xa6 | invert); // SSD1306_{NORMAL,INVERT}DISPLAY
 }
 
 void OLED::update_buffer(uint8_t* data, uint16_t length) {
-	if (type == SSD1306_128x64) {
-		memcpy(buffer, data, (length < 1024) ? length : 1024);
-
-	} else if (type == SSD1306_128x32) {
-		memcpy(buffer, data, (length < 512) ? length : 512);
-	}
+        memcpy(buffer, data, (length < buffer_byte_cnt) ? length : buffer_byte_cnt);
 	refresh_right = width - 1;
 	refresh_bottom = height - 1;
 	refresh_top = 0;
