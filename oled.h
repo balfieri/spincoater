@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "i2c.h"
 #include <string>
+#include "driver/gpio.h"
 
 //! @brief Drawing color
 typedef enum {
@@ -210,6 +211,8 @@ public:
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
+#define GPIO_NUM_NC gpio_num_t(-1)
+
 OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t type, uint8_t address) {
         this->rst_pin = rst;
 	i2c = new I2C(scl, sda, 1000);
@@ -227,15 +230,19 @@ OLED::OLED(gpio_num_t rst, gpio_num_t scl, gpio_num_t sda, ssd1306_panel_type_t 
 		width = 128;
 		height = 32;
 		break;
+        default:
+                ESP_LOGE("OLED", "Unknown OLED type" );
 	}
 }
 
 bool OLED::init() {
-        // Reset the OLED
-        gpio_set_direction(rst_pin, GPIO_MODE_OUTPUT);
-        gpio_set_level(rst_pin, 0);
-        Delay::msec(50);
-        gpio_set_level(rst_pin,1);
+        if (rst_pin != GPIO_NUM_NC) {
+            // Reset the OLED
+            gpio_set_direction(rst_pin, GPIO_MODE_OUTPUT);
+            gpio_set_level(rst_pin, 0);
+            Delay::msec(50);
+            gpio_set_level(rst_pin,1);
+        }
 
         // Allocate frame buffer
 	switch (type) {
@@ -256,21 +263,20 @@ bool OLED::init() {
 	i2c->start();
 	if (!i2c->write(address)) {
 		i2c->stop();
-		ESP_LOGE("OLED", "I2C bus not responding.");
+		ESP_LOGE("OLED", "I2C is not working.");
 		free(buffer);
                 return false;
 	}
 	i2c->stop();
 
-        if (false) {
-                // This should not be needed because we did a reset above.
-                // Now we assume all sending will be successful
-                if (type == SSD1306_128x64) {
+        if (rst_pin == GPIO_NUM_NC) {
+                // No reset pin => do actual init
+                if (type == SSD1306_128x64 || type == SSD1306_128x32) {
                         command(address, 0xae); // SSD1306_DISPLAYOFF
                         command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
                         command(address, 0x80); // Suggested value 0x80
                         command(address, 0xa8); // SSD1306_SETMULTIPLEX
-                        command(address, 0x3f); // 1/64
+                        command(address, height-1); // 1/64 or 1/32
                         command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
                         command(address, 0x00); // 0 no offset
                         command(address, 0x40); // SSD1306_SETSTARTLINE line #0
@@ -279,51 +285,28 @@ bool OLED::init() {
                         command(address, 0xa1); // SSD1306_SEGREMAP | 1
                         command(address, 0xc8); // SSD1306_COMSCANDEC
                         command(address, 0xda); // SSD1306_SETCOMPINS
-                        command(address, 0x12);
+                        command(address, (type == SSD1306_128x64) ? 0x12 : 0x02);
                         command(address, 0x81); // SSD1306_SETCONTRAST
-                        command(address, 0xcf);
+                        command(address, (type == SSD1306_128x64) ? 0xcf : 0x2f);
                         command(address, 0xd9); // SSD1306_SETPRECHARGE
                         command(address, 0xf1);
                         command(address, 0xdb); // SSD1306_SETVCOMDETECT
-                        command(address, 0x30);
+                        command(address, (type == SSD1306_128x64) ? 0x30 : 0x40);
                         command(address, 0x8d); // SSD1306_CHARGEPUMP
                         command(address, 0x14); // Charge pump on
                         command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
                         command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
                         command(address, 0xa6); // SSD1306_NORMALDISPLAY
-                } else if (type == SSD1306_128x32) {
-                        command(address, 0xae); // SSD1306_DISPLAYOFF
-                        command(address, 0xd5); // SSD1306_SETDISPLAYCLOCKDIV
-                        command(address, 0x80); // Suggested value 0x80
-                        command(address, 0xa8); // SSD1306_SETMULTIPLEX
-                        command(address, 0x1f); // 1/32
-                        command(address, 0xd3); // SSD1306_SETDISPLAYOFFSET
-                        command(address, 0x00); // 0 no offset
-                        command(address, 0x40); // SSD1306_SETSTARTLINE line #0
-                        command(address, 0x8d); // SSD1306_CHARGEPUMP
-                        command(address, 0x14); // Charge pump on
-                        command(address, 0x20); // SSD1306_MEMORYMODE
-                        command(address, 0x00); // 0x0 act like ks0108
-                        command(address, 0xa1); // SSD1306_SEGREMAP | 1
-                        command(address, 0xc8); // SSD1306_COMSCANDEC
-                        command(address, 0xda); // SSD1306_SETCOMPINS
-                        command(address, 0x02);
-                        command(address, 0x81); // SSD1306_SETCONTRAST
-                        command(address, 0x2f);
-                        command(address, 0xd9); // SSD1306_SETPRECHARGE
-                        command(address, 0xf1);
-                        command(address, 0xdb); // SSD1306_SETVCOMDETECT
-                        command(address, 0x40);
-                        command(address, 0x2e); // SSD1306_DEACTIVATE_SCROLL
-                        command(address, 0xa4); // SSD1306_DISPLAYALLON_RESUME
-                        command(address, 0xa6); // SSD1306_NORMALDISPLAY
+                } else {
+                    ESP_LOGE("OLED", "Unexpected OLED type" );
+                    return false;
                 }
         }
 
 	clear();
 	refresh(true);
 
-	if (false) {
+	if (rst_pin == GPIO_NUM_NC) {
                 command(address, 0xaf); // SSD1306_DISPLAYON
         }
 
@@ -370,14 +353,7 @@ uint8_t OLED::get_height() {
 }
 
 void OLED::clear() {
-	switch (type) {
-	case SSD1306_128x64:
-		memset(buffer, 0, 1024);
-		break;
-	case SSD1306_128x32:
-		memset(buffer, 0, 512);
-		break;
-	}
+        memset(buffer, 0, width*height);
 	refresh_right = width - 1;
 	refresh_bottom = height - 1;
 	refresh_top = 0;
@@ -392,32 +368,14 @@ void OLED::refresh( bool force) {
 	if (force) {
 		switch (type) {
 		case SSD1306_128x64:
-			command(address, 0x21); // SSD1306_COLUMNADDR
-			command(address, 0);    // column start
-			command(address, 127);  // column end
-			command(address, 0x22); // SSD1306_PAGEADDR
-			command(address, 0);    // page start
-			command(address, 7);    // page end (8 pages for 64 rows OLED)
-			for (k = 0; k < 1024; k++) {
-				i2c->start();
-				i2c->write(address);
-				i2c->write(0x40);
-				for (j = 0; j < 16; ++j) {
-					i2c->write(buffer[k]);
-					++k;
-				}
-				--k;
-				i2c->stop();
-			}
-			break;
 		case SSD1306_128x32:
 			command(address, 0x21); // SSD1306_COLUMNADDR
 			command(address, 0);    // column start
 			command(address, 127);  // column end
 			command(address, 0x22); // SSD1306_PAGEADDR
 			command(address, 0);    // page start
-			command(address, 3);    // page end (4 pages for 32 rows OLED)
-			for (k = 0; k < 512; k++) {
+			command(address, height/8 - 1);  // page end 
+			for (k = 0; k < (width*height); k++) {
 				i2c->start();
 				i2c->write(address);
 				i2c->write(0x40);
@@ -434,13 +392,13 @@ void OLED::refresh( bool force) {
 		if ((refresh_top <= refresh_bottom)
 				&& (refresh_left <= refresh_right)) {
 			page_start = refresh_top / 8;
-			page_end = refresh_bottom / 8;
+			page_end   = (refresh_bottom+7) / 8;
 			command(address, 0x21); // SSD1306_COLUMNADDR
 			command(address, refresh_left);    // column start
 			command(address, refresh_right);   // column end
 			command(address, 0x22); // SSD1306_PAGEADDR
-			command(address, page_start);    // page start
-			command(address, page_end); // page end
+			command(address, page_start);     // page start
+			command(address, page_end);       // page end
 			k = 0;
 			for (i = page_start; i <= page_end; ++i) {
 				for (j = refresh_left; j <= refresh_right; ++j) {

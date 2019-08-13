@@ -61,6 +61,16 @@ int main()
     gpio_set_direction( relay_pin, GPIO_MODE_OUTPUT );
     gpio_set_level( relay_pin, relay_n );
 
+    // I2C OLED
+    //             RST          SCL          SDA       Resolution    I2C Addr
+    OLED oled( GPIO_NUM_NC, GPIO_NUM_22, GPIO_NUM_21, SSD1306_128x64, 0x3c );
+    if ( oled.init() ) {
+        oled.clear();
+        oled.select_font( 1 );
+        oled.draw_string( 0, 0, "Hi, OLED!", WHITE, BLACK );
+        oled.refresh( true );
+    } 
+
     // Sensors        CS          SCLK        MISI          MISO
     MAX6675 temp( GPIO_NUM_5, GPIO_NUM_18,              GPIO_NUM_19 );
     #define F( c ) (32.0 + 9.0/5.0*c)
@@ -74,6 +84,7 @@ int main()
     int   t = 0;       // in seconds
     int   t_start = 0; 
     int   p = -1;      // point index
+    bool  t_repeated = false;  // repeat last time to wait for temperature to increase
     for( ;; ) 
     {
         // tick one second
@@ -101,21 +112,27 @@ int main()
 
         std::cout << profile.name << "\n";
 
-        std::cout << "Time:     " << t << " secs\n";
+        std::cout << "Time:     " << t << " secs" << (t_repeated ? " (repeated)" : "") << "\n";
         std::cout << "Current:  ";
         if ( __isnand(C) ) {
             std::cout << "no thermocouple attached!\n";
+            break;
         } else {
             std::cout << C << "C  (" << F(C) << "F)\n";
         }
-        std::cout << "Max Seen: " << C_max << "C  (" << F(C_max) << "F)\n";
         std::cout << "Target:   " << C_t   << "C  (" << F(C_t)   << "F)\n";
 
         relay_n = C >= C_t;
         std::cout << "Relay:    " << (relay_n ? "OFF" : "ON") << "\n";
         gpio_set_level( relay_pin, relay_n );
+
+        // repeat time to let temperature catch up?
+        t_repeated = C < C_t;
+        if ( t_repeated ) t--;
     }
 
+    std::cout << "Max Seen: " << C_max << "C  (" << F(C_max) << "F)\n";
+    std::cout << "DONE\n";
     gpio_set_level( relay_pin, 1 ); // OFF
     for( ;; ) {}
     return 0;
