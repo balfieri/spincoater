@@ -39,9 +39,11 @@ const Point chipquik_lead_free[] =
     {  90, 150 },
     { 180, 175 },
     { 210, 217 },
-    { 240, 249 },
+    { 240, 249 },  // max: 480F
     { 270, 217 },
     { 300, 150 },
+    { 400,   0 },  // glide down to off
+    { 0x7fffffff, 0 }, // stay off forever
 };
 
 const Profile profiles[] = 
@@ -91,7 +93,7 @@ int main()
         Delay::sec( 1 );
         t++;
 
-        // see if we need to move to the next point 
+        // see if we need to move to the next point in the profile
         if ( p == -1 || t >= profile.points[p].time_sec ) {
             t_start = t - 1;
             p++;
@@ -105,12 +107,12 @@ int main()
 
         // Figure out the new slope to use to hit the target temp.
         // Then figure out the target at this point in time.
-        float slope   = ( profile.points[p].C_target - C ) / float( profile.points[p].time_sec - t_start );
+        float slope   = ( profile.points[p].C_target - C_start ) / float( profile.points[p].time_sec - t_start );
         float C_t     = float( t - t_start )*slope + C_start;
 
         std::cout << "\n";
 
-        std::cout << profile.name << "\n";
+        std::cout << "Solder:   " << profile.name << "\n";
 
         std::cout << "Time:     " << t << " secs" << (t_repeated ? " (repeated)" : "") << "\n";
         std::cout << "Current:  ";
