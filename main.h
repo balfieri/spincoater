@@ -46,11 +46,57 @@ const Point chipquik_lead_free[] =
     { 0x7fffffff, 0 }, // stay off for 68 years :-)
 };
 
+const Point chipquik_lead[] = 
+{
+    {  30, 100 },
+    { 120, 150 },
+    { 150, 183 },
+    { 210, 235 },  // peak temperature
+    { 211,   0 },  
+//  { 240, 183 }, 
+//  { 270, 100 },
+    { 0x7fffffff, 0 }, // stay off for 68 years :-)
+};
+
+const Point kester_lead_free[] = 
+{
+    {  90, 150 },
+    { 180, 205 },
+    { 210, 245 },  // peak temperature
+    { 211,   0 },
+//  { 240, 205 },  
+//  { 270, 150 },
+    { 0x7fffffff, 0 }, // stay off for 68 years :-)
+};
+
+const Point kester_lead[] = 
+{
+    {  90, 150 },
+    { 180, 180 },
+    { 210, 220 },  // peak temperature
+    { 211,   0 },
+//  { 240, 180 },  
+//  { 270, 100 },
+    { 0x7fffffff, 0 }, // stay off for 68 years :-)
+};
+
 const Profile profiles[] = 
 {
-    { "ChipQuik Lead-Free Sn96.5/Ag3.0/Cu0.5 (T5)",
+    { "ChipQuik Lead-Free Sn96.5/Ag3.0/Cu0.5",
       chipquik_lead_free,
       sizeof( chipquik_lead_free ) / sizeof( chipquik_lead_free[0] ) },
+
+    { "ChipQuik Lead Sn63/Pb37",
+      chipquik_lead,
+      sizeof( chipquik_lead ) / sizeof( chipquik_lead[0] ) },
+
+    { "Kester Lead-Free Sn96.5/Ag3.0/Cu0.5",
+      kester_lead_free,
+      sizeof( kester_lead_free ) / sizeof( kester_lead_free[0] ) },
+
+    { "Kester Lead Sn63/Pb37",
+      kester_lead,
+      sizeof( kester_lead ) / sizeof( kester_lead[0] ) },
 };
 
 const int profile_cnt = sizeof( profiles ) / sizeof( profiles[0] );
