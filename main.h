@@ -39,11 +39,11 @@ const Point chipquik_lead_free[] =
     {  90, 150 },
     { 180, 175 },
     { 210, 217 },
-    { 240, 249 },  // max: 480F
-    { 270, 217 },
-    { 300, 150 },
-    { 400,   0 },  // glide down to off
-    { 0x7fffffff, 0 }, // stay off forever
+    { 240, 249 },  // peak temperature
+    { 241,   0 },  // turn off immediately and open the door
+//  { 270, 217 },  // can't glide down fast enough, so no point
+//  { 300, 150 },
+    { 0x7fffffff, 0 }, // stay off for 68 years :-)
 };
 
 const Profile profiles[] = 
@@ -126,6 +126,7 @@ int main()
 
         relay_n = C >= C_t;
         std::cout << "Relay:    " << (relay_n ? "OFF" : "ON") << "\n";
+        std::cout << "Door:     " << ((C_t == 0) ? "OPEN NOW" : "KEEP CLOSED") << "\n";
         gpio_set_level( relay_pin, relay_n );
 
         // repeat time to let temperature catch up?
