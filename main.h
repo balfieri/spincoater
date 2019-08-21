@@ -183,6 +183,9 @@ int main()
     std::cout << "Max Seen: " << C_max << "C  (" << F(C_max) << "F)\n";
     std::cout << "DONE\n";
     gpio_set_level( relay_pin, 1 ); // OFF
-    for( ;; ) {}
+    for( ;; ) 
+    {
+        Delay::sec( 3600 );
+    }
     return 0;
 }
