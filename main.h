@@ -134,7 +134,7 @@ int main()
     #define F( c ) (32.0 + 9.0/5.0*c)
 
     // Choose Profile
-    const Profile& profile = profiles[0];
+    const Profile& profile = profiles[1];  // use leaded solder for now
 
     float C_start = 25.0;
     float C       = temp.readC();
