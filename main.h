@@ -8,6 +8,7 @@
 //-------------------------------------------------------------------
 
 #include <iostream>
+#include <cstdio>
 #include <string>
 
 #include "delay.h"              
@@ -104,10 +105,19 @@ const int profile_cnt = sizeof( profiles ) / sizeof( profiles[0] );
 int main()
 {
     // OVEN RELAY   
-    int relay_n = 1; 
+    int relay_n = 1;   // off
     gpio_num_t relay_pin = GPIO_NUM_25;
     gpio_set_direction( relay_pin, GPIO_MODE_OUTPUT );
     gpio_set_level( relay_pin, relay_n );
+
+    // BUZZER
+    gpio_num_t buzzer_pin = GPIO_NUM_4;
+    gpio_set_direction( buzzer_pin, GPIO_MODE_OUTPUT );
+    int buzzer_n = 0;  // on 
+    gpio_set_level( buzzer_pin, buzzer_n );
+    Delay::sec( 1 );   // for one second to indicate we are starting
+    buzzer_n = 1;      // then off
+    gpio_set_level( buzzer_pin, buzzer_n );
 
     // I2C OLED
     //             RST          SCL          SDA       Resolution    I2C Addr
@@ -132,7 +142,8 @@ int main()
     int   t = 0;       // in seconds
     int   t_start = 0; 
     int   p = -1;      // point index
-    bool  t_repeated = false;  // repeat last time to wait for temperature to increase
+    bool  t_repeated = false;   // repeat last time to wait for temperature to increase
+    int   t_buzzer_started = -1;  // when C_t goes to 0
     for( ;; ) 
     {
         // tick one second
@@ -166,14 +177,24 @@ int main()
             std::cout << "no thermocouple attached!\n";
             break;
         } else {
-            std::cout << C << "C  (" << F(C) << "F)\n";
+            std::printf( "%6.2fC  (%6.2fF)\n", C, F(C) );
         }
-        std::cout << "Target:   " << C_t   << "C  (" << F(C_t)   << "F)\n";
+        std::printf( "Target:    %6.2fC  (%6.2fF)\n", C_t, F(C_t) );
 
         relay_n = C >= C_t;
         std::cout << "Relay:    " << (relay_n ? "OFF" : "ON") << "\n";
         std::cout << "Door:     " << ((C_t == 0) ? "OPEN NOW" : "KEEP CLOSED") << "\n";
         gpio_set_level( relay_pin, relay_n );
+
+        if ( C_t == 0 ) {
+            if ( t_buzzer_started == -1 ) {
+                t_buzzer_started = t;
+                buzzer_n = 0; // on
+            } else if ( (t - t_buzzer_started) >= 5 ) {  // final buzzer is on for 5 seconds
+                buzzer_n = 1; // off
+            }
+            gpio_set_level( buzzer_pin, buzzer_n );
+        }
 
         // repeat time to let temperature catch up?
         t_repeated = C < C_t;
