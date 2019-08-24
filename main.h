@@ -12,12 +12,8 @@
 #include <string>
 
 #include "delay.h"              
-#include "nvs_flash.h"
-#include "wifi.h"
 #include "math.h"
-#include "oled.h"
 #include "max6675.h"            // temperature sensor
-#include "mpu9255.h"            // motion and temperature sensor
 #include "driver/adc.h"         // analog inputs
 
 // Profiles for Various Solder Pastes
@@ -119,18 +115,8 @@ int main()
     buzzer_n = 1;      // then off
     gpio_set_level( buzzer_pin, buzzer_n );
 
-    // I2C OLED
-    //             RST          SCL          SDA       Resolution    I2C Addr
-    OLED oled( GPIO_NUM_NC, GPIO_NUM_22, GPIO_NUM_21, SSD1306_128x64, 0x3c );
-    if ( oled.init() ) {
-        oled.clear();
-        oled.select_font( 1 );
-        oled.draw_string( 0, 0, "Hi, OLED!", WHITE, BLACK );
-        oled.refresh( true );
-    } 
-
-    // Sensors        CS          SCLK        MISI          MISO
-    MAX6675 temp( GPIO_NUM_5, GPIO_NUM_18,              GPIO_NUM_19 );
+    // TEMPERATURE SENSOR
+    MAX6675 temp( GPIO_NUM_5, GPIO_NUM_18, GPIO_NUM_19 );
     #define F( c ) (32.0 + 9.0/5.0*c)
 
     // Choose Profile
