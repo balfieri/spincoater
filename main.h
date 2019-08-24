@@ -177,9 +177,9 @@ int main()
             std::cout << "no thermocouple attached!\n";
             break;
         } else {
-            std::printf( "%6.2fC  (%6.2fF)\n", C, F(C) );
+            std::printf( "%0.2fC  (%0.2fF)\n", C, F(C) );
         }
-        std::printf( "Target:    %6.2fC  (%6.2fF)\n", C_t, F(C_t) );
+        std::printf( "Target:   %0.2fC  (%0.2fF)\n", C_t, F(C_t) );
 
         relay_n = C >= C_t;
         std::cout << "Relay:    " << (relay_n ? "OFF" : "ON") << "\n";
