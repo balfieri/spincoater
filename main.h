@@ -109,11 +109,7 @@ int main()
     // BUZZER
     gpio_num_t buzzer_pin = GPIO_NUM_4;
     gpio_set_direction( buzzer_pin, GPIO_MODE_OUTPUT );
-    int buzzer_n = 0;  // on 
-    gpio_set_level( buzzer_pin, buzzer_n );
-    Delay::sec( 1 );   // for one second to indicate we are starting
-    buzzer_n = 1;      // then off
-    gpio_set_level( buzzer_pin, buzzer_n );
+    gpio_set_level( buzzer_pin, 1 );  // off
 
     // TEMPERATURE SENSOR
     MAX6675 temp( GPIO_NUM_5, GPIO_NUM_18, GPIO_NUM_19 );
@@ -129,12 +125,20 @@ int main()
     int   t_start = 0; 
     int   p = -1;      // point index
     bool  t_repeated = false;   // repeat last time to wait for temperature to increase
-    int   t_buzzer_started = -1;  // when C_t goes to 0
+    int   t_buzzer_secs_left = 0;
     for( ;; ) 
     {
         // tick one second
         Delay::sec( 1 );
         t++;
+
+        // time to turn off the buzzer?
+        if ( t_buzzer_secs_left != 0 ) {
+            t_buzzer_secs_left--;
+            if ( t_buzzer_secs_left == 0 ) {
+                gpio_set_level( buzzer_pin, 0 );  // off
+            }
+        }
 
         // see if we need to move to the next point in the profile
         if ( p == -1 || t >= profile.points[p].time_sec ) {
@@ -142,6 +146,11 @@ int main()
             p++;
             if ( p == profile.point_cnt ) break;
             if ( p > 0 ) C_start = profile.points[p-1].C_target;
+
+            // buzz 1 sec for p == 0, 2 sec for p == 1, etc.
+            // buzz for 10 sec for last p to indicate that it's time to open the door
+            t_buzzer_secs_left = (p == (profile.point_cnt-1)) ? 10 : (p + 1);
+            gpio_set_level( buzzer_pin, 1 );  // on
         }
 
         // read current temperature
@@ -171,16 +180,6 @@ int main()
         std::cout << "Relay:    " << (relay_n ? "OFF" : "ON") << "\n";
         std::cout << "Door:     " << ((C_t == 0) ? "OPEN NOW" : "KEEP CLOSED") << "\n";
         gpio_set_level( relay_pin, relay_n );
-
-        if ( C_t == 0 ) {
-            if ( t_buzzer_started == -1 ) {
-                t_buzzer_started = t;
-                buzzer_n = 0; // on
-            } else if ( (t - t_buzzer_started) >= 5 ) {  // final buzzer is on for 5 seconds
-                buzzer_n = 1; // off
-            }
-            gpio_set_level( buzzer_pin, buzzer_n );
-        }
 
         // repeat time to let temperature catch up?
         t_repeated = C < C_t;
