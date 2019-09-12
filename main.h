@@ -13,6 +13,7 @@
 
 #include "delay.h"              
 #include "math.h"
+#include "pwm.h"
 
 // Profiles for Various Solder Pastes
 //
@@ -88,6 +89,8 @@ int main()
         std::cout << "Profile:  " << profile.name << "\n";
         std::cout << "Time:     " << t << " secs\n";
         std::cout << "RPM:      " << RPM << "\n";
+
+        // change the RPM
     }
 
     std::cout << "DONE\n";
