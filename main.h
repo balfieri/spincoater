@@ -17,7 +17,7 @@
 
 // Motor/ESC Parameters
 const double motor_kv           = 2600.0;
-const double motor_v            = 11.1;   // voltage
+const double motor_v            = 11.1;   // voltage (3s equivalent)
 const int    motor_pole_cnt     = 12;   
 const double motor_rpm_min      = 0;
 const double motor_rpm_max      = motor_kv * motor_v;
@@ -103,7 +103,7 @@ int main()
         std::cout << "Time:     " << t << " secs\n";
         std::cout << "RPM:      " << RPM << "\n";
 
-        // change the RPM
+        // change the RPM by changing the PWM duty cycle
         double rpm_frac = (RPM - motor_rpm_min) / (motor_rpm_max - motor_rpm_min);
         double duty_pct = esc_duty_pct_min + rpm_frac*(esc_duty_pct_max - esc_duty_pct_min);
         esc_pwm.setDutyPct( duty_pct );
