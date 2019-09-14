@@ -83,6 +83,7 @@ PWM::PWM( gpio_num_t PIN, double HZ, int INDEX )
 void PWM::setDutyPct( double pct )
 {
     ledc_conf.duty = pct * double( (1 << 15)-1 ) / 100.0;
+    std::cout << "setDutyPct: pct=" << pct << " duty=" << ledc_conf.duty << "\n";
     ledc_channel_config( &ledc_conf );
 }
 

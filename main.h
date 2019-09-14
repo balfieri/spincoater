@@ -69,7 +69,12 @@ const int profile_cnt = sizeof( profiles ) / sizeof( profiles[0] );
 int main()
 {
     // ESC PWM Controller
+    // Start with duty cycle set to 0% for 10 seconds.
+    // This arms the ESC.
+    // It actually just needs to be < duty_cycle_pct_min for a few seconds.
     PWM esc_pwm( esc_pin, esc_hz );
+    esc_pwm.setDutyPct( 0.0 );
+    Delay::sec( 10 );
 
     // Choose Profile
     const Profile& profile = profiles[0];  // PCB photoresist
